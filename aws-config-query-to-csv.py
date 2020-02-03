@@ -1,54 +1,55 @@
 import json
 import sys
-import pprint
 import csv
 import boto3
 from pathlib import Path
-
-
-# Parameter: CLI profile name (e.g. "default")
-profile = sys.argv[1]
-
+from pprint import pprint
 
 def extractName(e):
     return e["Name"]
 
+def extractTagsFromJson(tags):
+    obj = json.dumps(tags)
+    for key in obj:
+        print(list(map('value', key)))
 
 def process_sql_file(client, fname_inp):
 
+    ProcessedHeader = False
     fname_tmp = fname_inp.replace('.sql', '.json')
     fname_out = fname_inp.replace('.sql', '.csv')
+
+    kwargs = {
+        'Expression':''
+    }
 
     sql = ""
     with open(fname_inp, 'r') as file:
         sql = file.read()
 
-    print("I/ Querying Config resources")
-    result = client.select_resource_config(Expression=sql)
+    kwargs['Expression'] = sql
 
-    print("I/ Writing to cache")
-    # Write to tmp file (JSON format) first - in the future script will accept
-    # option whether to just load from tmp or re-query Config
-    with open(fname_tmp, 'w') as file:
-        file.write(json.dumps(result))
+    csvfile = open(fname_out, 'w', newline="\n", encoding="utf-8") 
+    writer = csv.writer(csvfile)
 
-    # Load from tmp file
-    print("I/ Loading from cache")
-    obj = {}
-    with open(fname_tmp, 'r') as f:
-        obj = json.load(f)
+    while True:
 
-    print("I/ Compiling column names")
-    select_fields = list(map(extractName, obj['QueryInfo']['SelectFields']))
+        results = client.select_resource_config(**kwargs)
+        select_fields = list(map(extractName, results['QueryInfo']['SelectFields']))
 
-    print("I/ Writing resources to CSV file")
-    with open(fname_out, 'w', newline="\n", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(select_fields)
-        for objstr in obj['Results']:
+        if ProcessedHeader == False:
+            writer.writerow(select_fields)
+            ProcessedHeader = True
+
+        for objstr in results['Results']:
             row = []
             obj = json.loads(objstr)
             for fieldname in select_fields:
+                # if the column name is tags it needs to be expanded 
+                #if (fieldname == 'tags'):
+                    #evalstr = "obj['" + fieldname.replace('.',"']['") + "']"
+                    #extractTagsFromJson(eval(evalstr))
+
                 evalstr = "obj['" + fieldname.replace('.',"']['") + "']"
                 try:
                     evalval = eval(evalstr)
@@ -57,14 +58,19 @@ def process_sql_file(client, fname_inp):
                 row.append(evalval)
             writer.writerow(row)
 
-    return True
+        try: 
+            kwargs['NextToken'] = results['NextToken']
+        except KeyError:
+            break
+
+    csvfile.close()
 
 
 # Main entry point
 
 if __name__ == '__main__':
 
-    session = boto3.Session(profile_name = profile)
+    session = boto3.Session()
     client = session.client('config')
 
     for filename in Path('.').rglob('*.sql'):
@@ -73,3 +79,4 @@ if __name__ == '__main__':
             process_sql_file(client, str(filename))
         except:
             print("E/ Error processing %s" % filename)
+            raise
