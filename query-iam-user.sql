@@ -1,0 +1,26 @@
+SELECT
+    resourceId,
+    resourceName,
+    resourceType,
+    resourceCreationTime,
+    accountId,
+    arn,
+    availabilityZone,
+    awsRegion,
+    configuration.arn,
+    configuration.attachedManagedPolicies.policyArn,
+    configuration.attachedManagedPolicies.policyName,
+    configuration.createDate,
+    configuration.groupList,
+    configuration.path,
+    configuration.userId,
+    configuration.userName,
+    configuration.userPolicyList.policyName,
+    configurationItemCaptureTime,
+    configurationItemStatus,
+    configurationStateId,
+    relationships.resourceId,
+    relationships.resourceName,
+    relationships.resourceType
+WHERE
+    resourceType = 'AWS::IAM::User'
