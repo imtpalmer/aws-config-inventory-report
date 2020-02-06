@@ -1,0 +1,27 @@
+SELECT
+	accountId,
+	arn,
+	availabilityZone,
+	awsRegion,
+	configuration.apiKeySource,
+	configuration.binaryMediaTypes,
+	configuration.createdDate,
+	configuration.description,
+	configuration.endpointConfiguration.types,
+	configuration.id,
+	configuration.minimumCompressionSize,
+	configuration.name,
+	configuration.version,
+	configurationItemCaptureTime,
+	configurationItemStatus,
+	configurationStateId,
+	relationships.resourceId,
+	relationships.resourceName,
+	relationships.resourceType,
+	resourceCreationTime,
+	resourceId,
+	resourceName,
+	resourceType,
+	tags
+WHERE
+    resourceType = 'AWS::ApiGateway::RestApi'

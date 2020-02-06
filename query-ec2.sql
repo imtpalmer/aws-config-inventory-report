@@ -90,9 +90,6 @@ SELECT
   resourceId,
   resourceName,
   resourceType,
-  tags.keyName,
-  tags.tags,
-  tags.value,
   tags
 WHERE
   resourceType = 'AWS::EC2::Instance'

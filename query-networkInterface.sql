@@ -8,7 +8,7 @@ SELECT
 	configuration.association.ipOwnerId,
 	configuration.association.publicDnsName,
 	configuration.association.publicIp,
-	configuration.attachment.attachTime
+	configuration.attachment.attachTime,
 	configuration.attachment.attachmentId,
 	configuration.attachment.deleteOnTermination,
 	configuration.attachment.deviceIndex,
@@ -49,7 +49,6 @@ SELECT
 	resourceCreationTime,
 	resourceId,
 	resourceName,
-	resourceType,
-	tags
+	resourceType
 WHERE
     resourceType = 'AWS::EC2::NetworkInterface'
