@@ -1,13 +1,17 @@
-import json
-import csv
 import boto3
+import csv
+import json
 from pathlib import Path
+
 
 def extractName(e):
     return e["Name"]
 
-def process_sql_file(client, fname_inp):
 
+def extractTag(tag):
+    return tag['key'] + "=" + tag['value']
+
+def process_sql_file(client, fname_inp):
     ProcessedHeader = False
     fname_tmp = fname_inp.replace('.sql', '.json')
     fname_out = fname_inp.replace('.sql', '.csv')
@@ -20,7 +24,7 @@ def process_sql_file(client, fname_inp):
         'Expression': sql
     }
 
-    csvfile = open(fname_out, 'w', newline="\n", encoding="utf-8") 
+    csvfile = open(fname_out, 'w', newline="\n", encoding="utf-8")
     writer = csv.writer(csvfile)
 
     while True:
@@ -37,14 +41,10 @@ def process_sql_file(client, fname_inp):
             obj = json.loads(objstr)
             for field in select_fields:
                 # if the column name is tags it needs to be expanded
-                if (field == 'tags'):
-                    tagList = obj['tags']
-                    expandedTags = ""
-                    for tag in tagList:
-                        expandedTags += tag['key'] + "=" + tag['value'] + "|"
-                    evalval= expandedTags
+                if field == 'tags':
+                    evalval = "|".join(map(extractTag, obj['tags']))
                 else:
-                    evalstr = "obj['" + field.replace('.',"']['") + "']"
+                    evalstr = "obj['" + field.replace('.', "']['") + "']"
                     try:
                         evalval = eval(evalstr)
                     except:
@@ -52,12 +52,13 @@ def process_sql_file(client, fname_inp):
                 row.append(evalval)
             writer.writerow(row)
 
-        try: 
+        try:
             kwargs['NextToken'] = results['NextToken']
         except KeyError:
             break
 
     csvfile.close()
+
 
 # Main entry point
 if __name__ == '__main__':
