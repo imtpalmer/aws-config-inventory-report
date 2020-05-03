@@ -1,10 +1,7 @@
 import json
-import sys
 import csv
-import re
 import boto3
 from pathlib import Path
-from pprint import pprint
 
 def extractName(e):
     return e["Name"]
@@ -38,20 +35,20 @@ def process_sql_file(client, fname_inp):
         for objstr in results['Results']:
             row = []
             obj = json.loads(objstr)
-            for fieldname in select_fields:
-                # if the column name is tags it needs to be expanded 
-                # if (fieldname == 'tags'):
-                    # print(fieldname)
-                    # pprint(obj['tags'][10])
-                    # evalval = eval("obj['" + fieldname.replace('.',"']['") + "']")
-                    # jstr = json.loads(' '.join(map(str, evalval)) )
-                    # print(jstr["tag"])
-
-                evalstr = "obj['" + fieldname.replace('.',"']['") + "']"
-                try:
-                    evalval = eval(evalstr)
-                except:
-                    evalval = ""
+            for field in select_fields:
+                # if the column name is tags it needs to be expanded
+                if (field == 'tags'):
+                    tagList = obj['tags']
+                    expandedTags = ""
+                    for tag in tagList:
+                        expandedTags += tag['key'] + "=" + tag['value'] + "|"
+                    evalval= expandedTags
+                else:
+                    evalstr = "obj['" + field.replace('.',"']['") + "']"
+                    try:
+                        evalval = eval(evalstr)
+                    except:
+                        evalval = ""
                 row.append(evalval)
             writer.writerow(row)
 
