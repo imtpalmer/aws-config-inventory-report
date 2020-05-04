@@ -1,16 +1,17 @@
-import json
-import sys
-import csv
-import re
 import boto3
+import csv
+import json
 from pathlib import Path
-from pprint import pprint
+
 
 def extractName(e):
     return e["Name"]
 
-def process_sql_file(client, fname_inp):
 
+def extractTag(tag):
+    return tag['key'] + "=" + tag['value']
+
+def process_sql_file(client, fname_inp):
     ProcessedHeader = False
     fname_tmp = fname_inp.replace('.sql', '.json')
     fname_out = fname_inp.replace('.sql', '.csv')
@@ -23,7 +24,7 @@ def process_sql_file(client, fname_inp):
         'Expression': sql
     }
 
-    csvfile = open(fname_out, 'w', newline="\n", encoding="utf-8") 
+    csvfile = open(fname_out, 'w', newline="\n", encoding="utf-8")
     writer = csv.writer(csvfile)
 
     while True:
@@ -38,29 +39,26 @@ def process_sql_file(client, fname_inp):
         for objstr in results['Results']:
             row = []
             obj = json.loads(objstr)
-            for fieldname in select_fields:
-                # if the column name is tags it needs to be expanded 
-                # if (fieldname == 'tags'):
-                    # print(fieldname)
-                    # pprint(obj['tags'][10])
-                    # evalval = eval("obj['" + fieldname.replace('.',"']['") + "']")
-                    # jstr = json.loads(' '.join(map(str, evalval)) )
-                    # print(jstr["tag"])
-
-                evalstr = "obj['" + fieldname.replace('.',"']['") + "']"
-                try:
-                    evalval = eval(evalstr)
-                except:
-                    evalval = ""
+            for field in select_fields:
+                # if the column name is tags it needs to be expanded
+                if field == 'tags':
+                    evalval = "|".join(map(extractTag, obj['tags']))
+                else:
+                    evalstr = "obj['" + field.replace('.', "']['") + "']"
+                    try:
+                        evalval = eval(evalstr)
+                    except:
+                        evalval = ""
                 row.append(evalval)
             writer.writerow(row)
 
-        try: 
+        try:
             kwargs['NextToken'] = results['NextToken']
         except KeyError:
             break
 
     csvfile.close()
+
 
 # Main entry point
 if __name__ == '__main__':
